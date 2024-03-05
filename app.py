@@ -9,24 +9,26 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 from openai import OpenAI
+import google.generativeai as genai
 
+
+# ------------------------------------------- Config --------------------------------------------------------------
 # Loading Local env variables
 load_dotenv()
-os.getenv("GOOGLE_API_KEY")
+
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+client = OpenAI(api_key=os.getenv("openai_api_key"))
 
 
 # The code below is for the layout of the page
 st.set_page_config(  # Alternate names: setup_page, page, layout
-    layout="wide",  # Can be "centered" or "wide". In the future also "dashboard", etc.
+    # layout="wide",  # Can be "centered" or "wide". In the future also "dashboard", etc.
     initial_sidebar_state="auto",  # Can be "auto", "expanded", "collapsed"
     page_title='Travel Agent Chatbot',  # String or None. Strings get appended with "• Streamlit".
     page_icon=None,  # String, anything supported by st.image, or None.
 )
 
-st.header("Hello")
-
-# st.image("data/bg.jpg")
+# ------------------------------------------- Functions --------------------------------------------------------------
 
 # Image from Local
 path = os.path.dirname(__file__)
@@ -65,96 +67,86 @@ def get_conversational_chain():
 
     return chain
 
-add_bg_from_local(image_file)
+
+def get_gemini_repsonse(input):
+    model=genai.GenerativeModel('gemini-pro')
+    response=model.generate_content(input, )
+    return response.text
+
+
+def fetch_travel_information_for_user_queries(query, travel_type):
+
+    if travel_type == "General Travel Information":
+      prompt_temp =  f"""prompt": "You are tasked with developing a travel planner system that handles multiple questions from the users like the distance between the cities, flight time, range of the cost of the flight. The system should act as a virtual travel planner, providing information about  distance between the cities, flight time and range of the cost of the flight when users inquire about travel options between places. The system should showcase virtual data, including  distance between the cities, flight time, range of the cost of the flight. The output response should be summarized and show information about the distance, flight time and range of the cost of flight.",
+        "user_question": "{query}"""
+
+    else:
+      prompt_temp = f"""
+            "prompt": "You are tasked with developing a travel planner system that handles multiple travel agent tour packages for various cities. The system should act as a virtual travel planner, providing information about tour packages when users inquire about travel options between places or for a specific destination. The system should showcase virtual data for each tour package, including cost, duration, what is included in the package, and if there are any family tour packages available. Additionally, include a category for 'package type' and output all the different types of packages offered by each agent.",
+              "user_question" --> "{query}"
+            """
+
+    result = get_gemini_repsonse(prompt_temp)
+    return result
+
+
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-3.5-turbo"
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+if "messages_gti" not in st.session_state:
+    st.session_state.messages_gti = []
+
+if "messages_tpi" not in st.session_state:
+    st.session_state.messages_tpi = []
+
+
+# ------------------------------------------- Setup --------------------------------------------------------------
+
+# add_bg_from_local(image_file)
+
+col1, col2, col3 = st.columns([0.5,2,0.5])
+with col2:
+    st.header("Travel Agent Chatbot :robot_face:")
+    st.markdown("")
+    st.markdown("")
+c1, c2, c3 = st.columns([1,1,0.9])
 
 with st.sidebar:
+    st.title(":blue[Travel Agent Chatbot]")
+    st.markdown("Your :orange[Personal Travel Assistant] designed to make planning your next trip a breeze! :red[Powered by LLM's], our chatbot harnesses the power of cutting-edge AI technology to provide information about the :orange[Distance, Flight Time, Flight Cost] between two cities, or the enticing :orange[Travel Package] options available for your next adventure.")
+    st.markdown("")
+    st.markdown("")
+    travel_type = st.radio("What is your question about?", ["General Travel Information", "Tour Package Information"])
 
-    st.title("Travel Agent Chatbot!")
-    ttype = st.radio("What are you looking for?", ("Flights", "Vacation Plan"))
-    # z = st.selectbox("from", ["Hello", "how"])
-    if ttype == "Flights":
-        cc1, cc2 = st.columns(2)
-        places = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Boston", "Maldives", "Paris", "Bali", "Santorini", "Tokyo", "Rome", "New York", "Dubai", "UAE", "Barcelona", "Sydney"]
-        with cc1:
-            originp = st.selectbox("Origin", places)
-        with cc2:
-            # dplace = places.remove(originp)
-            destinationp = st.selectbox("Destination", places)
+# ------------------------------------------- Output --------------------------------------------------------------
 
-        c1, c2, c3 = st.columns(3)
-
-        # with c1:
-            # Use date_picker to create a date picker
-        date_string = date_picker(picker_type=PickerType.time.string_value, value=0, unit=Unit.days.string_value,
-                                  key='date_picker')
-
-        if date_string is not None:
-            st.write('Date Picker: ', date_string)
-
-            # Use date_range_picker to create a datetime range picker
-        st.subheader('Date Range Picker')
-        date_range_string = date_range_picker(picker_type=PickerType.time.string_value,
-                                              start=-30, end=0, unit=Unit.minutes.string_value,
-                                              key='range_picker',
-                                              refresh_button={'is_show': True, 'button_name': 'Refresh last 30min',
-                                                              'refresh_date': -30,
-                                                              'unit': Unit.minutes.string_value})
-        if date_range_string is not None:
-            start_datetime = date_range_string[0]
-            end_datetime = date_range_string[1]
-            st.write(f"Date Range Picker [{start_datetime}, {end_datetime}]")
-
-            # month = st.selectbox("Month", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-        with c2:
-            month = st.selectbox("Day", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31])
-        with c3:
-            year = st.selectbox("Year", [2024, 2025])
-
-    # print(z)
-
-# st.container()
-
-# st.chat("Hello")
-
-col1, col2, col3 = st.columns([0.5, 6, 0.5])
-Z = st.container()
-with Z:
-    # with st.chat_message("User"):
-    #     st.write("Hello human")
-    #     st.bar_chart(np.random.randn(30, 3))
-    #
-    # prompt = st.chat_input("Say something")
-    # if prompt:
-    #     st.write(f"User has sent the following prompt: {prompt}")
-
-
-    st.title("ChatGPT-like clone")
-
-    client = OpenAI(api_key=os.getenv("openai_api_key"))
-
-    if "openai_model" not in st.session_state:
-        st.session_state["openai_model"] = "gpt-3.5-turbo"
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    for message in st.session_state.messages:
+if travel_type == "General Travel Information":
+    for message in st.session_state.messages_gti:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+else:
+    for message in st.session_state.messages_tpi:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("What is up?"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+if prompt := st.chat_input("Ask me anything about your Travel Information? Ex: Flight Cost between Mumbai to Delhi"):
+    # st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        with st.chat_message("assistant"):
-            stream = client.chat.completions.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                stream=True,
-            )
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    with st.chat_message("assistant"):
+        response = fetch_travel_information_for_user_queries(prompt, travel_type)
+        st.write(response)
+
+    # st.session_state.messages.append({"role": "assistant", "content": response})
+
+    if travel_type == "General Travel Information":
+        st.session_state.messages_gti.append({"role": "user", "content": prompt})
+        st.session_state.messages_gti.append({"role": "assistant", "content": response})
+    else:
+        st.session_state.messages_tpi.append({"role": "user", "content": prompt})
+        st.session_state.messages_tpi.append({"role": "assistant", "content": response})
