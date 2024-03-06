@@ -131,8 +131,9 @@ if prompt := st.chat_input("Ask me anything about your Travel Information? Ex: F
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = fetch_travel_information_for_user_queries(prompt, travel_type)
-        st.write(response)
+        with st.spinner("Generating the response..."):
+            response = fetch_travel_information_for_user_queries(prompt, travel_type)
+            st.write(response)
 
     # st.session_state.messages.append({"role": "assistant", "content": response})
 
