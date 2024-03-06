@@ -1,23 +1,15 @@
 import streamlit as st
-from streamlit_date_picker import date_range_picker, PickerType, Unit, date_picker
-import numpy as np
 import base64
 import os
 import google.generativeai as genai
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains.question_answering import load_qa_chain
-from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
-from openai import OpenAI
 import google.generativeai as genai
-
 
 # ------------------------------------------- Config --------------------------------------------------------------
 # Loading Local env variables
 load_dotenv()
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-client = OpenAI(api_key=os.getenv("openai_api_key"))
 
 
 # The code below is for the layout of the page
@@ -49,23 +41,23 @@ def add_bg_from_local(image_file):
     unsafe_allow_html=True
     )
 
-def get_conversational_chain():
-
-    prompt_template = """
-    Assume you are a Professional Expert Travel Agent who helps the customers to plan their vacations/trips by suggesting the Flight Time and Flight Costs for given dates between the selected origin to destination places. 
-    Please summarize the information like showing the flight time and costs as a json.\n\n
-    Question: \n{question}\n
-
-    Answer:
-    """
-
-    model = ChatGoogleGenerativeAI(model="gemini-pro",
-                             temperature=0.6)
-
-    prompt = PromptTemplate(template = prompt_template, input_variables = ["question"])
-    chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
-
-    return chain
+# def get_conversational_chain():
+#
+#     prompt_template = """
+#     Assume you are a Professional Expert Travel Agent who helps the customers to plan their vacations/trips by suggesting the Flight Time and Flight Costs for given dates between the selected origin to destination places.
+#     Please summarize the information like showing the flight time and costs as a json.\n\n
+#     Question: \n{question}\n
+#
+#     Answer:
+#     """
+#
+#     model = ChatGoogleGenerativeAI(model="gemini-pro",
+#                              temperature=0.6)
+#
+#     prompt = PromptTemplate(template = prompt_template, input_variables = ["question"])
+#     chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
+#
+#     return chain
 
 
 def get_gemini_repsonse(input):
